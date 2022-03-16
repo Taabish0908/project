@@ -11,28 +11,29 @@ const createAuthor = async function (req, res) {
 }
 
 
-const loginUser = async function (req, res) {
-    let userName = req.body.email;
-    let password = req.body.password;
-  
-    let author = await authorModel.findOne({ email: userName, password: password });
-    if (!author)
-      return res.send({
-        status: false,
-        msg: "username or the password is not correct",
-      });
-  
-    let token = jwt.sign(
-      {
-    authorId: author._id.toString(),
-        batch: "thoriums",
-        organisation: "functionUps",
-      },
-      "functionups-thoriums"
-    );
-    res.setHeader("x-api-key", token);
-    res.send({ status: true, data: token });
-  };
+const loginAuthor = async function (req, res){
+  try{
+      let username = req.body.email
+      let pass = req.body.password
+
+      if(username && pass){
+          let author = await authorModel.findOne({email : username, password: pass})
+          if(!author) return res.status(404).send({status: false, msg: "please provide valid username or password"})
+          let payLoad = {authorId : author._id}
+          let secret = "group13"
+          let token = jwt.sign(payLoad, secret )
+          res.status(200).send({status: true, data: token})
+
+      }else{
+          res.status(400).send({status: false, msg: "Please provide username and password"})
+      }
+  }
+  catch (error) {
+      console.log(error)
+      res.status(500).send({ msg: error.message })
+  }
+}
+
 
 module.exports.createAuthor = createAuthor
-module.exports.loginUser = loginUser
+module.exports.loginAuthor = loginAuthor

@@ -39,7 +39,7 @@ const getBlogs = async function (req, res) {
             res.status(404).send({ status: false, msg: "auhtorId not exist" })
         }
 
-        let blogsData = await blogsModel.find({ authorId: authorId, category: category, isDeleted: false, isPublished: false })
+        let blogsData = await blogsModel.find({ authorId: authorId, category: category, isDeleted: false, isPublished: true })
         if (!blogsData) {
             res.status(404).send({ status: false, msg: "no blogs found" })
         } else {
@@ -78,7 +78,7 @@ const deleteBlog = async function(req,res){
     // }
     // let blogId = req.params.blogId;
     let userDel = await blogsModel.findOneAndUpdate({_id: blogId},{isDeleted: true},{new:true});
-    res.status(200).send({status:true, data:userDel})
+    res.status(200).send({status:true})
     }catch(err){
       res.status(500).send({Error : err.message})
     }
