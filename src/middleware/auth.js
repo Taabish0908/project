@@ -1,5 +1,5 @@
 const jwt = require("jsonwebtoken");
-const blogModel = require("../models/blogsModel")
+const blogsModel = require("../models/blogsModel")
 
 
 let authenticate= async function (req,res,next){
@@ -22,7 +22,7 @@ let authenticate= async function (req,res,next){
         let id = req.params.blogId
         let jwtToken = req.headers['x-api-key']
     try{
-        let blogs = await blogModel.findById(id)
+        let blogs = await blogsModel.findById(id)
         if(!blogs) return res.status(404).send({status: false, msg: "please provide valid blog ID"})
         if(blogs.isDeleted == true) return res.status(404).send({status: false, msg: "no such blog found"})
   

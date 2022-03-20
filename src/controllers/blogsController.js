@@ -2,9 +2,11 @@ const blogsModel = require("../models/blogsModel")
 const authorModel = require("../models/authorModel")
 const jwt = require("jsonwebtoken")
 
+
 const createBlog = async function (req, res) {
     try{
         let data = req.body
+        console.log(data)
     let author_id=req.body.authorId
     if(!author_id){
         return res.send("AuthorId is required")
@@ -57,11 +59,12 @@ const updateBlog = async function(req,res){
     let updateBlog = req.params.blogId
     let  = await blogsModel.findById(updateBlog)
   if (!updateBlog) {
-    return res.status(404).send({msg:"Invalid Blog"})
+    return res.status(404).send({msg:"Invalid Blog",status:false})
   }
   let updatedata = req.body;
-  let updatedUser = await blogsModel.findOneAndUpdate({ _id: updateBlog },{title : updatedata.title, body:updatedata.body, tags : updatedata.tags, subcategory : updatedata.subcategory},{new : true, upsert : true});
-  res.status(200).send({ status: true, data: updatedUser })
+  let updatedUser = await blogsModel.findOneAndUpdate({ _id: updateBlog },
+    {title : updatedata.title, body:updatedata.body, tags : updatedata.tags,category:updatedata.category, subcategory : updatedata.subcategory},{new : true, upsert : true});
+  res.status(202).send({ status: 'Blogs successfully updated', data: updatedUser })
 }catch(err){
     res.status(500).send({Error : err.message})
     }
@@ -69,16 +72,19 @@ const updateBlog = async function(req,res){
 
 const deleteBlog = async function(req,res){
     try{
-    let blogId = req.params.blogId;
-    if(!blogId)
-    res.send({msg: "blog id needs to be present"})
-    let id = await blogsModel.findById(blogId)
-    // if (!id) {
-    //   return res.status(404).send({ msg: "Is not deleted" });
-    // }
-    // let blogId = req.params.blogId;
-    let userDel = await blogsModel.findOneAndUpdate({_id: blogId},{isDeleted: true},{new:true});
-    res.status(200).send({status:true})
+    let data = req.params.blogId;
+    if(!data)
+    return res.status(400).send({msg: "blog id needs to be present"})
+    
+    
+    let blog = await blogsModel.findById(data)
+    if (!blog) return res.status(404).send({ status: false, msg: "Blog does not exists" })
+    
+    // for checking if the blog is already deleted
+    if (blog.isDeleted == true) return res.status(400).send({ status: false, msg: "Blog is already deleted" })
+    let deletedBlog = await blogsModel.findOneAndUpdate({ _id: data },
+        { $set: { isDeleted: true, deletedAt: new Date() } }, { new: true })
+    res.status(200).send({status:'The Blog is Successfully deleted'})
     }catch(err){
       res.status(500).send({Error : err.message})
     }
@@ -86,15 +92,22 @@ const deleteBlog = async function(req,res){
 
   const deletebyQuery = async function(req,res){
     try{  
-            let query = req.query
-            let filterByquery = await blogsModel.find(query)
+        const data = req.query
+        
+        const blogId = req.query._id
+        if (!Object.keys(data).length > 0) return res.status(400).send({ status: false, msg: "Query is required to filter the data" })
+        let filterByquery = await blogsModel.find(data)
             if(filterByquery.length == 0){
-                return res.status(400).send({msg:"Blog Not Found"})
+                return res.status(400).send({msg:"No Blog Not Found with the given Query"})
             }
-            else{
-                let deletedDetails = await blogsModel.updateMany(query, {isDeleted : true, deletedAt: new Date()})
-                return res.status(200).send({msg:"data is deleted"})
-            }
+        // checking if blog is already deleted
+        let isDeleted = await blogsModel.findOne({ _id : blogId , isDeleted : true})
+       if (isDeleted)return res.status(400).send({ status: false, msg: "Blog is already deleted" })
+
+        // deleting blog
+        const deletedBlog = await (blogsModel.updateMany(data, { isDeleted: true, deletedAt: new Date() }, { new: true }))
+        if (!deletedBlog) return res.status(404).send({ status: false, msg: "no data found" })
+        res.status(200).send({msg : "blog deleted successfully"})
     }catch(err){
         res.status(500).send({Error : err.message})
     }
