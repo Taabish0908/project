@@ -5,9 +5,17 @@ const blogsModel = require("../models/blogsModel")
 let authenticate= async function (req,res,next){
     try{
         let token = req.headers['x-api-key']
-        if(!token) return res.status(400).send({status: false, msg: "please provide token" })
-        let validateToken = jwt.verify(token, "group13")
-        if(!validateToken) return res.status(401).send({status: false, msg: "authentication failed"})
+        if(!token) 
+        return res.status(400).send({status: false, msg: "please provide token" })
+        let validateToken = jwt.verify(token, "group13",{
+            ignoreExpiration: true})
+            if (Date.now() > validateToken.exp * 1000) {
+                return res
+                    .status(401)
+                    .send({ status: false, message: "Session expired, please login" });
+            }
+        if(!validateToken) 
+        return res.status(401).send({status: false, msg: "authentication failed"})
         
         // req['x-api-key'] = token
         next()
